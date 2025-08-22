@@ -4,9 +4,9 @@
 
 This repo includes a docker-compose setup to run the stack locally:
 
-- PostgreSQL 15 (port 5434 on host)
+- PostgreSQL 15 (port 5435 on host)
 - Backend API (Node/Express) on port 3000
-- Flutter Admin Web served via nginx on port 8080
+- React Admin Web Panel served via nginx on port 8080
 
 ### Prereqs
 - Docker and Docker Compose installed
@@ -22,12 +22,16 @@ After a few moments:
 
 The backend runs DB migrations automatically on start.
 
+### Default Admin Credentials
+- Email: admin@example.com
+- Password: admin1234
+
 ### Environment notes
-- The admin container is built with `API_BASE_URL=http://localhost:3000` so your browser calls the host API directly.
+- The admin container is built with `API_BASE_URL=http://localhost:3000/api` so your browser calls the host API directly.
 - CORS is allowed for `http://localhost:8080` by default via `ALLOWED_ORIGINS`.
 - Database credentials are development defaults. Change them for production.
 
-A comprehensive Mobile Device Management solution built with Kotlin, Flutter, and Node.js.
+A comprehensive Mobile Device Management solution built with React.js, Node.js, and PostgreSQL.
 
 ## Architecture Overview
 
@@ -51,10 +55,11 @@ Android Device App (Kotlin)
 - **Features**: Device enrollment, app management, security policies, monitoring
 - **Communication**: REST API + FCM for real-time commands
 
-### 2. Flutter Admin Panel (`flutter-admin-panel/`)
-- **Framework**: Flutter
-- **Purpose**: Cross-platform admin interface for managing devices
-- **Features**: Device dashboard, policy management, monitoring
+### 2. React Admin Panel (`react-admin-panel/`)
+- **Framework**: React.js + TypeScript
+- **UI**: TailwindCSS + Lucide React Icons
+- **Purpose**: Modern web admin interface for managing devices
+- **Features**: Device dashboard, policy management, monitoring, responsive design
 
 ### 3. Backend Server (`backend-server/`)
 - **Language**: Node.js with Express
@@ -64,30 +69,30 @@ Android Device App (Kotlin)
 ## Key Features
 
 ### Device Management
-- ✅ Device enrollment via QR code
-- ✅ Device profile registration
-- ✅ Remote device identification
+- ✅ Device enrollment via QR code (Implemented)
+- ⚠️ Device profile registration (Basic registration only)
+- ❌ Remote device identification (Not implemented)
 
 ### App Management
-- ✅ Silent app installation/uninstallation
-- ✅ Permission management
-- ✅ App whitelist/blacklist
+- ✅ Silent app installation/uninstallation (Backend implemented)
+- ⚠️ Permission management (Partial - app permissions only)
+- ✅ App whitelist/blacklist (Install type controls)
 
 ### Security Policies
-- ✅ Remote device lock
-- ✅ Remote wipe
-- ✅ Password policy enforcement
-- ✅ Hardware restrictions (camera, USB, Play Store)
+- ✅ Remote device lock (Command implemented)
+- ✅ Remote wipe (Command implemented with confirmation)
+- ✅ Password policy enforcement (Policy system implemented)
+- ❌ Hardware restrictions (camera, USB, Play Store) (Not implemented)
 
 ### Monitoring & Compliance
-- ✅ Real-time location tracking
-- ✅ Device health monitoring
-- ✅ Battery status reporting
-- ✅ Compliance reports
+- ❌ Real-time location tracking (Not implemented)
+- ⚠️ Device health monitoring (Basic device status only)
+- ❌ Battery status reporting (Not implemented)
+- ❌ Compliance reports (Not implemented)
 
 ### Communication
-- ✅ Firebase Cloud Messaging (FCM)
-- ✅ Real-time command execution
+- ✅ Firebase Cloud Messaging (FCM) (Backend setup complete)
+- ✅ Real-time command execution (Command system implemented)
 - ✅ Status reporting
 
 ## Quick Start
@@ -111,18 +116,19 @@ Android Device App (Kotlin)
    - Open `android-mdm-agent` in Android Studio
    - Build and install on target devices
 
-3. **Flutter Admin Panel**
+3. **React Admin Panel**
    ```bash
-   cd flutter-admin-panel
-   flutter pub get
-   flutter run
+   cd react-admin-panel
+   npm install
+   npm run dev    # Development server
+   npm run build  # Production build
    ```
 
 ## Development
 
 Each component has its own README with detailed setup instructions:
 - [Android Agent README](./android-mdm-agent/README.md)
-- [Flutter Admin Panel README](./flutter-admin-panel/README.md)
+- [React Admin Panel](./react-admin-panel/) - Modern TypeScript + TailwindCSS interface
 - [Backend Server README](./backend-server/README.md)
 
 ## Security Considerations
@@ -136,11 +142,25 @@ Each component has its own README with detailed setup instructions:
 
 MIT License - see LICENSE file for details
 
+## Quick Start Commands
 
-run admin => cd /Users/phirun/Projects/mdm_project/flutter-admin-panel && flutter run -d chrome --dart-define=API_BASE_URL=ht
-tp://localhost:3000
+```bash
+# Start all services with Docker
+docker-compose up -d
 
-run server => npm run dev --prefix /Users/phirun/Projects/mdm_project/backend-server
+# Or run individually:
+
+# Backend Server
+npm run dev --prefix /Users/phirun/Projects/mdm_project/backend-server
+
+# React Admin Panel (Development)
+cd /Users/phirun/Projects/mdm_project/react-admin-panel && npm run dev
+
+# Access Points:
+# - Admin Panel: http://localhost:8080 (Docker) or http://localhost:5173 (Dev)
+# - Backend API: http://localhost:3000
+# - Database: localhost:5435
+```
 
 # Backend
 cd /Users/phirun/Projects/mdm_project/backend-server

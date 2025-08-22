@@ -11,6 +11,7 @@ const policyRoutes = require('./routes/policies');
 const appRoutes = require('./routes/apps');
 const commandRoutes = require('./routes/commands');
 const monitoringRoutes = require('./routes/monitoring');
+const dashboardRoutes = require('./routes/dashboard');
 
 const { errorHandler } = require('./middleware/errorHandler');
 const { authenticateToken } = require('./middleware/auth');
@@ -59,7 +60,17 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
+
+// Aggressive rate limiting for polling requests
+const pollingLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 5, // limit each IP to 5 requests per 5 minutes for polling
+  message: 'Polling requests are rate limited. Please reduce request frequency.',
+  keyGenerator: (req) => `${req.ip}-${req.get('User-Agent') || 'unknown'}`
+});
+
 app.use('/api/', limiter);
+app.use('/rest/notification/polling/*', pollingLimiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -89,11 +100,35 @@ app.get('/', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 app.use('/api/devices', authenticateToken, deviceRoutes);
 app.use('/api/policies', authenticateToken, policyRoutes);
 app.use('/api/apps', authenticateToken, appRoutes);
 app.use('/api/commands', authenticateToken, commandRoutes);
 app.use('/api/monitoring', authenticateToken, monitoringRoutes);
+
+// Block unwanted polling requests (likely from misconfigured external systems)
+app.all('/rest/notification/polling/*', (req, res) => {
+  console.log(`⚠️  Blocking polling request: ${req.method} ${req.originalUrl} from ${req.ip} - User-Agent: ${req.get('User-Agent')}`);
+  res.status(410).json({
+    error: 'Polling endpoint discontinued',
+    message: 'This endpoint is no longer available. Please update your configuration to use /api/* endpoints.',
+    documentation: '/api/docs'
+  });
+});
+
+// Block any other /rest/* requests
+app.all('/rest/*', (req, res) => {
+  console.log(`⚠️  Blocking REST request: ${req.method} ${req.originalUrl} from ${req.ip} - User-Agent: ${req.get('User-Agent')}`);
+  res.status(410).json({
+    error: 'REST endpoint discontinued',
+    message: 'REST endpoints are no longer available. Please use /api/* endpoints instead.',
+    migration: {
+      old: '/rest/*',
+      new: '/api/*'
+    }
+  });
+});
 
 // Error handling middleware
 app.use(errorHandler);

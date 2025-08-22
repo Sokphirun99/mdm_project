@@ -1,7 +1,9 @@
+version: '3.8'
+
 services:
   db:
     image: postgres:15-alpine
-    container_name: mdm_db
+    container_name: mdm_db_dev
     environment:
       POSTGRES_DB: mdm_database
       POSTGRES_USER: postgres
@@ -9,7 +11,7 @@ services:
     ports:
       - "5435:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data_dev:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d mdm_database"]
       interval: 5s
@@ -19,24 +21,19 @@ services:
   backend:
     build:
       context: ./backend-server
-    container_name: mdm_backend
+      dockerfile: Dockerfile
+    container_name: mdm_backend_dev
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3000
-      # Used by /api/devices/enrollment/qr-code to embed the API base URL into the QR
-      # Set to your LAN IP when enrolling physical devices, e.g. http://192.168.1.50:3000
       SERVER_URL: ${SERVER_URL:-http://localhost:3000}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: mdm_database
       DB_USER: postgres
       DB_PASSWORD: mdm
-      # optional: set to any non-empty value to enable SSL to DB
-      # DB_SSL: ""
-      JWT_SECRET: change-me-in-prod
-      # Comma-separated origins (exact match). Defaults to localhost admin only.
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
-      # optional: initial admin credentials for first-time seed
+      JWT_SECRET: dev-secret-key
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:5173}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin1234}
       ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
@@ -46,20 +43,25 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+    volumes:
+      # Mount source code for hot reloading in development
+      - ./backend-server/src:/app/src
     restart: unless-stopped
+    command: sh -c "npm run migrate && npm run seed && node src/index.js"
 
   admin:
-    image: react-admin-panel:latest
-    container_name: mdm_admin
+    build: 
+      context: ./react-admin-panel
+      dockerfile: Dockerfile
+      args:
+        API_BASE_URL: ${API_BASE_URL:-http://localhost:3000/api}
+    container_name: mdm_admin_dev
     depends_on:
       - backend
     ports:
       - "8080:80"
     restart: unless-stopped
-    environment:
-      # Pass environment variables at runtime if needed
-      - API_BASE_URL=${API_BASE_URL:-http://localhost:3000/api}
 
 volumes:
-  db_data:
+  db_data_dev:
     driver: local

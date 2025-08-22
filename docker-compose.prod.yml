@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mdm_db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-mdm_database}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mdm}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-mdm_database}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+      - mdm_network
+    # No ports exposed to host in production for security
+    # Access only through backend service
+
+  backend:
+    build:
+      context: ./backend-server
+      dockerfile: Dockerfile
+    container_name: mdm_backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Set to your domain or LAN IP for production
+      SERVER_URL: ${SERVER_URL:-https://mdm.yourdomain.com}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-mdm_database}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-mdm}
+      # Enable SSL for DB in production
+      DB_SSL: ${DB_SSL:-true}
+      # Use a strong random string in production
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-prod}
+      # Allow frontend domain and any additional trusted origins
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://admin.yourdomain.com}
+      # Set admin credentials through environment variables
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin1234}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mdm_network
+    # Expose API to reverse proxy
+    ports:
+      - "3000:3000"
+
+  admin:
+    image: ${ADMIN_IMAGE:-react-admin-panel:latest}
+    container_name: mdm_admin
+    environment:
+      # Set to your API domain for production
+      - API_BASE_URL=${API_BASE_URL:-https://mdm.yourdomain.com/api}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - mdm_network
+    # Expose web UI to reverse proxy
+    ports:
+      - "8080:80"
+
+networks:
+  mdm_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
