@@ -18,4 +18,6 @@ COPY seeds ./seeds
 EXPOSE 3000
 
 # Run migrations and seeds on container start then start server
-CMD ["sh", "-c", "npx knex migrate:latest && npx knex seed:run && node src/index.js"]
+COPY init.sh ./
+RUN chmod +x init.sh
+CMD ["./init.sh"]
