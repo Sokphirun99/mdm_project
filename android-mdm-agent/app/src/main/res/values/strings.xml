@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MDM Agent</string>
+    <string name="device_admin_description">MDM Device Administrator</string>
+    <string name="device_admin_explanation">This app manages device security policies</string>
+    <string name="scan_qr">Scan QR</string>
+    <string name="scan_prompt">Point camera at the QR code</string>
+    <string name="scan_result">Scanned: %1$s</string>
+    <string name="scan_cancelled">Scan cancelled</string>
+    <string name="scan_failed">Scan failed</string>
+    <string name="camera_permission_denied">Camera permission denied</string>
+    <string name="enrollment_qr_value">Enrollment QR: %1$s</string>
+</resources>

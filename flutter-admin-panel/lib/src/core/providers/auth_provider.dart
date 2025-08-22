@@ -18,14 +18,37 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    // Be flexible with backend key names and nulls
+    final String id = (json['id'] ?? '').toString();
+    final String email = (json['email'] ?? '').toString();
+    final String role = (json['role'] ?? '').toString();
+
+    // Prefer explicit "name"; otherwise build from firstName/lastName; fallback to email
+    String? name = (json['name'] as String?)?.trim();
+    final String? firstName = (json['firstName'] as String?)?.trim();
+    final String? lastName = (json['lastName'] as String?)?.trim();
+    if (name == null || name.isEmpty) {
+      final combined = [firstName, lastName]
+          .where((p) => p != null && p.isNotEmpty)
+          .join(' ')
+          .trim();
+      name = combined.isNotEmpty ? combined : email;
+    }
+
+    // Support multiple timestamp keys
+    final dynamic ts =
+        json['lastLogin'] ?? json['last_login'] ?? json['last_login_at'];
+    DateTime? lastLogin;
+    if (ts is String && ts.isNotEmpty) {
+      lastLogin = DateTime.tryParse(ts);
+    }
+
     return User(
-      id: json['id'],
-      email: json['email'],
-      name: json['name'],
-      role: json['role'],
-      lastLogin: json['last_login'] != null
-          ? DateTime.parse(json['last_login'])
-          : null,
+      id: id,
+      email: email,
+      name: name,
+      role: role,
+      lastLogin: lastLogin,
     );
   }
 
@@ -35,6 +58,7 @@ class User {
       'email': email,
       'name': name,
       'role': role,
+      // Keep snake_case for backward compatibility with backend
       'last_login': lastLogin?.toIso8601String(),
     };
   }
@@ -87,8 +111,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'password': password,
       });
 
-      final user = User.fromJson(response['user']);
-      final token = response['token'];
+      // Validate response shape defensively
+      final dynamic rawUser = response['user'];
+      final dynamic rawToken = response['token'];
+
+      assert(() {
+        // Lightweight debug info to help diagnose shape mismatches
+        // ignore: avoid_print
+        print('[Auth] login response keys: ${response.keys.toList()}');
+        // ignore: avoid_print
+        print(
+            '[Auth] user type: ${rawUser?.runtimeType}, token type: ${rawToken?.runtimeType}');
+        return true;
+      }());
+
+      if (rawUser is! Map<String, dynamic>) {
+        throw const ApiException(
+            'Malformed response: user is missing or not an object');
+      }
+      if (rawToken is! String || rawToken.isEmpty) {
+        throw const ApiException(
+            'Malformed response: token is missing or not a string');
+      }
+
+      final user = User.fromJson(rawUser);
+      final token = rawToken;
 
       state = state.copyWith(
         user: user,

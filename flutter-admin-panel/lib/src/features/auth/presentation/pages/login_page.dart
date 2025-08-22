@@ -204,7 +204,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Email: admin@mdm.com\nPassword: admin123',
+                              'Email: admin@example.com\nPassword: admin1234',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall

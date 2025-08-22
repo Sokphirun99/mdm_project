@@ -18,6 +18,9 @@ module.exports = {
     migrations: {
       tableName: 'knex_migrations',
       directory: './migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   },
 
@@ -29,7 +32,7 @@ module.exports = {
       database: process.env.DB_NAME,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      ssl: { rejectUnauthorized: false }
+      ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false
     },
     pool: {
       min: 2,
@@ -38,6 +41,9 @@ module.exports = {
     migrations: {
       tableName: 'knex_migrations',
       directory: './migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   }
 };

@@ -33,6 +33,13 @@ const changePasswordSchema = Joi.object({
 
 // POST /api/auth/login
 router.post('/login', asyncHandler(async (req, res) => {
+  // Debug: Log incoming request
+  console.log('[DEBUG] Login attempt:', { 
+    email: req.body.email, 
+    passwordLength: req.body.password ? req.body.password.length : 0,
+    bodyKeys: Object.keys(req.body)
+  });
+
   const { error, value } = loginSchema.validate(req.body);
   if (error) {
     throw new AppError(error.details[0].message, 400, 'VALIDATION_ERROR');

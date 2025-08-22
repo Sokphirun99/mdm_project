@@ -8,7 +8,7 @@
     "dev": "nodemon src/index.js",
     "test": "jest",
     "migrate": "knex migrate:latest",
-    "seed": "knex seed:run"
+  "seed": "knex seed:run"
   },
   "dependencies": {
     "express": "^4.18.2",

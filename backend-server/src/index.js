@@ -77,6 +77,16 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Friendly root endpoint for convenience
+app.get('/', (req, res) => {
+  res.status(200).json({
+    service: 'MDM Backend Server',
+    message: 'API is running',
+    health: '/health',
+    docs: 'Use /api/* endpoints (e.g., /api/auth/login, /api/devices/enroll)'
+  });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/devices', authenticateToken, deviceRoutes);
