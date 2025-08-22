@@ -1,5 +1,32 @@
 # Android MDM (Mobile Device Management) System
 
+## Docker deployment
+
+This repo includes a docker-compose setup to run the stack locally:
+
+- PostgreSQL 15 (port 5434 on host)
+- Backend API (Node/Express) on port 3000
+- Flutter Admin Web served via nginx on port 8080
+
+### Prereqs
+- Docker and Docker Compose installed
+
+### Start
+1. Copy `backend-server/.env.example` to `backend-server/.env` and adjust if needed (optional; defaults are provided via compose).
+2. From the repo root, run:
+   - `docker compose up --build`
+
+After a few moments:
+- API: http://localhost:3000
+- Admin UI: http://localhost:8080
+
+The backend runs DB migrations automatically on start.
+
+### Environment notes
+- The admin container is built with `API_BASE_URL=http://localhost:3000` so your browser calls the host API directly.
+- CORS is allowed for `http://localhost:8080` by default via `ALLOWED_ORIGINS`.
+- Database credentials are development defaults. Change them for production.
+
 A comprehensive Mobile Device Management solution built with Kotlin, Flutter, and Node.js.
 
 ## Architecture Overview
@@ -114,3 +141,14 @@ run admin => cd /Users/phirun/Projects/mdm_project/flutter-admin-panel && flutte
 tp://localhost:3000
 
 run server => npm run dev --prefix /Users/phirun/Projects/mdm_project/backend-server
+
+# Backend
+cd /Users/phirun/Projects/mdm_project/backend-server
+node src/index.js &
+
+# Flutter Web
+cd /Users/phirun/Projects/mdm_project/flutter-admin-panel  
+flutter run -d web-server --web-port 8080
+
+# Database
+docker start mdm-postgres

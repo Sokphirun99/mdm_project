@@ -66,8 +66,12 @@ class ApiService {
 
       assert(() {
         debugPrint('[ApiService] POST $uri');
+        debugPrint('[ApiService] Headers: ${_authHeaders(token)}');
+        debugPrint(
+            '[ApiService] Body: ${body != null ? jsonEncode(body) : 'null'}');
         return true;
       }());
+
       final response = await http
           .post(
             uri,
@@ -76,9 +80,17 @@ class ApiService {
           )
           .timeout(_timeout);
 
+      assert(() {
+        debugPrint('[ApiService] Response Status: ${response.statusCode}');
+        debugPrint('[ApiService] Response Headers: ${response.headers}');
+        debugPrint('[ApiService] Response Body: ${response.body}');
+        return true;
+      }());
+
       return _handleResponse(response);
     } catch (e) {
       final uri = _buildUri(endpoint);
+      debugPrint('[ApiService] POST Error: $e');
       throw ApiException('Network error: $e, uri=$uri');
     }
   }
@@ -149,17 +161,33 @@ class ApiService {
   Map<String, dynamic> _handleResponse(http.Response response) {
     final statusCode = response.statusCode;
 
+    assert(() {
+      debugPrint('[ApiService] Handling response with status: $statusCode');
+      debugPrint('[ApiService] Response body length: ${response.body.length}');
+      debugPrint(
+          '[ApiService] Content-Type: ${response.headers['content-type']}');
+      return true;
+    }());
+
     try {
       final Map<String, dynamic> data = jsonDecode(response.body);
 
       if (statusCode >= 200 && statusCode < 300) {
         return data;
       } else {
-        final message = data['message'] ?? 'Unknown error';
+        // Backend may return 'error' or 'message' for error responses
+        final message = data['error'] ?? data['message'] ?? 'Unknown error';
         throw ApiException('API Error ($statusCode): $message', statusCode);
       }
     } catch (e) {
       if (e is ApiException) rethrow;
+
+      assert(() {
+        debugPrint('[ApiService] JSON parse error: $e');
+        debugPrint('[ApiService] Raw response body: "${response.body}"');
+        return true;
+      }());
+
       final ct = response.headers['content-type'] ?? 'unknown';
       final snippet = response.body.length > 160
           ? '${response.body.substring(0, 160)}…'

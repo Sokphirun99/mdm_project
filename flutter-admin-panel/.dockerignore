@@ -1,0 +1,10 @@
+.dart_tool
+.buildlog
+.packages
+.pub-cache
+.flutter-plugins
+.flutter-plugins-dependencies
+build
+.git
+.vscode
+Dockerfile*
