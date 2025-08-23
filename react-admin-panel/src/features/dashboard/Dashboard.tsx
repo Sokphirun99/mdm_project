@@ -1,140 +1,84 @@
 import { useQuery } from '@tanstack/react-query';
-import { Users, Wifi, WifiOff, Clock, Shield, Loader2 } from 'lucide-react';
 import { apiClient } from '../../services/api';
 
-interface DashboardStats {
-  totalDevices: number;
-  onlineDevices: number;
-  offlineDevices: number;
-  pendingCommands: number;
-  activePolicies: number;
-}
+type DashboardStats = {
+	users: { total: number; active: number };
+	devices: { total: number; active: number; inactive: number };
+	organizations: { total: number };
+	policies: { total: number };
+	apps: { total: number };
+	commands: { recent: number };
+	lastUpdated: string;
+};
 
 async function fetchDashboardStats(): Promise<DashboardStats> {
-  const response = await apiClient.get<{ success: boolean; data: DashboardStats }>('/dashboard/stats');
-  if (response.success && response.data) {
-    return response.data;
-  }
-  throw new Error('Failed to fetch dashboard stats');
+	// Backend returns the stats object directly (no { success, data } wrapper)
+	return apiClient.get<DashboardStats>('/dashboard/stats');
 }
 
-interface StatCardProps {
-  title: string;
-  value: number;
-  icon: React.ReactNode;
-  color: string;
-}
-
-function StatCard({ title, value, icon, color }: StatCardProps) {
-  return (
-    <div className="bg-white overflow-hidden shadow rounded-lg">
-      <div className="p-5">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <div className={`w-8 h-8 ${color} rounded-md flex items-center justify-center`}>
-              {icon}
-            </div>
-          </div>
-          <div className="ml-5 w-0 flex-1">
-            <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
-              <dd className="text-lg font-medium text-gray-900">{value}</dd>
-            </dl>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+function StatCard({ title, value, subtext }: { title: string; value: number | string; subtext?: string }) {
+	return (
+		<div className="bg-white overflow-hidden shadow rounded-lg">
+			<div className="p-5">
+				<div className="flex items-center">
+					<div className="ml-0 w-0 flex-1">
+						<dl>
+							<dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
+							<dd className="mt-1 text-2xl font-semibold text-gray-900">{value}</dd>
+							{subtext ? <dd className="mt-1 text-xs text-gray-500">{subtext}</dd> : null}
+						</dl>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export function Dashboard() {
-  const { data: stats, isLoading, error } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: fetchDashboardStats,
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
+	const { data, isLoading, error } = useQuery({
+		queryKey: ['dashboard-stats'],
+		queryFn: fetchDashboardStats,
+		refetchInterval: 30_000,
+		staleTime: 30_000,
+	});
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+	if (isLoading) {
+		return (
+			<div className="p-6 flex items-center justify-center min-h-96">
+				<div className="text-gray-600">Loading dashboard...</div>
+			</div>
+		);
+	}
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error loading dashboard</h3>
-              <p className="text-sm text-red-700 mt-1">
-                {error instanceof Error ? error.message : 'Unknown error'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+	if (error) {
+		return (
+			<div className="p-6">
+				<div className="bg-red-50 border border-red-200 rounded-md p-4">
+					<div className="text-sm font-medium text-red-800">Error loading dashboard</div>
+					<div className="text-sm text-red-700 mt-1">{error instanceof Error ? error.message : 'Unknown error'}</div>
+				</div>
+			</div>
+		);
+	}
 
-  return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Overview of your mobile device management system
-        </p>
-      </div>
+	const stats = data!;
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <StatCard
-          title="Total Devices"
-          value={stats?.totalDevices || 0}
-          icon={<Users className="h-5 w-5 text-white" />}
-          color="bg-blue-500"
-        />
-        <StatCard
-          title="Online Devices"
-          value={stats?.onlineDevices || 0}
-          icon={<Wifi className="h-5 w-5 text-white" />}
-          color="bg-green-500"
-        />
-        <StatCard
-          title="Offline Devices"
-          value={stats?.offlineDevices || 0}
-          icon={<WifiOff className="h-5 w-5 text-white" />}
-          color="bg-yellow-500"
-        />
-        <StatCard
-          title="Pending Commands"
-          value={stats?.pendingCommands || 0}
-          icon={<Clock className="h-5 w-5 text-white" />}
-          color="bg-purple-500"
-        />
-        <StatCard
-          title="Active Policies"
-          value={stats?.activePolicies || 0}
-          icon={<Shield className="h-5 w-5 text-white" />}
-          color="bg-indigo-500"
-        />
-      </div>
+	return (
+		<div className="p-6">
+			<div className="mb-8">
+				<h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+				<p className="mt-1 text-sm text-gray-600">Overview of your mobile device management system</p>
+			</div>
 
-      {/* Recent Activity Section */}
-      <div className="mt-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h2>
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <div className="px-4 py-5 sm:p-6">
-            <p className="text-gray-500 text-center">
-              Recent activity feed will be implemented here...
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+			<div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+				<StatCard title="Users" value={stats.users.total} subtext={`Active: ${stats.users.active}`} />
+				<StatCard title="Devices" value={stats.devices.total} subtext={`Active: ${stats.devices.active} • Inactive: ${stats.devices.inactive}`} />
+				<StatCard title="Organizations" value={stats.organizations.total} />
+				<StatCard title="Policies" value={stats.policies.total} />
+				<StatCard title="Apps" value={stats.apps.total} />
+			</div>
+
+			<div className="mt-6 text-xs text-gray-500">Last updated: {new Date(stats.lastUpdated).toLocaleString()}</div>
+		</div>
+	);
 }
