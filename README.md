@@ -158,6 +158,25 @@ graph TB
 - 📈 **Monitoring**: Compliance reporting and analytics
 - ⚙️ **Settings**: System configuration and user management
 
+**Workflow Diagram:**
+
+flowchart TD
+    A[Android Device Client] -->|1. Periodic Polling<br>GET /api/device/status| B[Go Server<br>main.go]
+
+    subgraph B [Go Server Logic]
+        B1[Receive Request]
+        B1 --> B2{Device ID in<br>deviceConfigs map?}
+        B2 -- Yes --> B3[Fetch Config]
+        B2 -- No --> B4[Return 'not registered' error]
+        B3 --> B5[Return JSON Config]
+    end
+
+    B5 -->|2. JSON Response: config| A
+    B4 -->|2. JSON Response: error| A
+
+    C[Admin/Operator] -->|3. Manually Updates| D[In-Memory Map<br>deviceConfigs]
+    D -->|Read by| B2
+
 ### 🔧 Backend Server (`backend-server/`)
 **Robust API server with enterprise features**
 
