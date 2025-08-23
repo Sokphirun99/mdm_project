@@ -1,70 +1,85 @@
 # Android MDM (Mobile Device Management) System
 
-## Docker deployment
+Modern MDM stack with a React + Tailwind admin, Node/Express API, and PostgreSQL.
 
-This repo includes a docker-compose setup to run the stack locally:
+## Docker (recommended)
 
-- PostgreSQL 15 (port 5435 on host)
-- Backend API (Node/Express) on port 3000
-- React Admin Web Panel served via nginx on port 8080
+This repo includes a Docker Compose setup for local development:
 
-### Prereqs
-- Docker and Docker Compose installed
+- PostgreSQL 15 (host port 5435)
+- Backend API (Node/Express) on http://localhost:3000
+- React Admin Panel (served by Nginx) on http://localhost:8080
 
-### Start
-1. Copy `backend-server/.env.example` to `backend-server/.env` and adjust if needed (optional; defaults are provided via compose).
-2. From the repo root, run:
-   - `docker compose up --build`
+### Prerequisites
+- Docker and Docker Compose plugin installed
+
+### Start the stack
+Option A — helper script
+
+```bash
+./dev.sh start
+```
+
+Option B — raw Docker Compose
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build
+```
 
 After a few moments:
 - API: http://localhost:3000
 - Admin UI: http://localhost:8080
 
-The backend runs DB migrations automatically on start.
+The backend automatically runs database migrations and seeds on start.
+
+### Manage services
+
+```bash
+./dev.sh logs      # Tail combined logs
+./dev.sh restart   # Restart all services
+./dev.sh stop      # Stop and remove containers
+```
 
 ### Default Admin Credentials
 - Email: admin@example.com
 - Password: admin1234
 
 ### Environment notes
-- The admin container is built with `API_BASE_URL=http://localhost:3000/api` so your browser calls the host API directly.
-- CORS is allowed for `http://localhost:8080` by default via `ALLOWED_ORIGINS`.
-- Database credentials are development defaults. Change them for production.
-
-A comprehensive Mobile Device Management solution built with React.js, Node.js, and PostgreSQL.
+- The admin image is built with `API_BASE_URL=http://localhost:3000/api`, so your browser calls the host API directly.
+- CORS allows `http://localhost:8080` (and localhost dev ports) via `ALLOWED_ORIGINS`.
+- Database persists in the `mdm_project_db_data_dev` Docker volume (host port `5435`).
 
 ## Architecture Overview
 
 ```
 Android Device App (Kotlin)
-          │
-          ▼
-     REST API / FCM
-          │
-          ▼
-   Backend Server (Node.js)
-          │
-          ▼
-   Database (PostgreSQL)
+               │
+               ▼
+       REST API / FCM
+               │
+               ▼
+    Backend Server (Node.js)
+               │
+               ▼
+    Database (PostgreSQL)
 ```
 
 ## Components
 
-### 1. Android MDM Agent (`android-mdm-agent/`)
-- **Language**: Kotlin
-- **Features**: Device enrollment, app management, security policies, monitoring
-- **Communication**: REST API + FCM for real-time commands
+### 1) Android MDM Agent (`android-mdm-agent/`)
+- Language: Kotlin
+- Features: Device enrollment, app management, security policies, monitoring
+- Communication: REST API + FCM for real-time commands
 
-### 2. React Admin Panel (`react-admin-panel/`)
-- **Framework**: React.js + TypeScript
-- **UI**: TailwindCSS + Lucide React Icons
-- **Purpose**: Modern web admin interface for managing devices
-- **Features**: Device dashboard, policy management, monitoring, responsive design
+### 2) React Admin Panel (`react-admin-panel/`)
+- Framework: React + TypeScript, Vite
+- UI: TailwindCSS v3 + Lucide icons
+- Purpose: Modern admin interface for managing devices
 
-### 3. Backend Server (`backend-server/`)
-- **Language**: Node.js with Express
-- **Database**: PostgreSQL
-- **Features**: REST API, FCM integration, device management
+### 3) Backend Server (`backend-server/`)
+- Language: Node.js (Express)
+- Database: PostgreSQL (Knex)
+- Features: REST API, FCM integration, device/policy/app/command management
 
 ## Key Features
 
@@ -74,7 +89,7 @@ Android Device App (Kotlin)
 - ❌ Remote device identification (Not implemented)
 
 ### App Management
-- ✅ Silent app installation/uninstallation (Backend implemented)
+- ✅ Silent app install/uninstall (Backend implemented)
 - ⚠️ Permission management (Partial - app permissions only)
 - ✅ App whitelist/blacklist (Install type controls)
 
@@ -95,40 +110,57 @@ Android Device App (Kotlin)
 - ✅ Real-time command execution (Command system implemented)
 - ✅ Status reporting
 
-## Quick Start
+## Local development (without Docker)
 
-### Prerequisites
-- Android Studio (for Android agent)
-- Flutter SDK (for admin panel)
-- Node.js 18+ (for backend)
-- PostgreSQL database
+Backend:
+```bash
+cd backend-server
+npm install
+npm run dev
+```
 
-### Setup Instructions
+React Admin Panel:
+```bash
+cd react-admin-panel
+npm install
+# point the UI to your API if needed
+VITE_API_BASE_URL=http://localhost:3000/api npm run dev
+```
 
-1. **Backend Server**
+Build the admin UI:
+```bash
+cd react-admin-panel
+npm run build
+```
+
+## Migrations & data
+
+- The backend runs `npm run migrate` and `npm run seed` automatically in Docker.
+- Run manually if needed:
    ```bash
-   cd backend-server
-   npm install
-   npm run dev
+   docker exec mdm_backend_dev npm run migrate
+   docker exec mdm_backend_dev npm run seed
+   ```
+- To reset the database (dangerous): stop services and remove the `mdm_project_db_data_dev` volume.
+
+## Troubleshooting
+
+- 500 on login or "relation \"users\" does not exist": migrations/seeds did not run.
+   ```bash
+   docker exec mdm_backend_dev npm run migrate
+   docker exec mdm_backend_dev npm run seed
+   ```
+- Admin UI missing styles: ensure Tailwind v3 is used and rebuild the admin image.
+   ```bash
+   docker compose -f docker-compose.dev.yml build admin
+   docker compose -f docker-compose.dev.yml up -d
    ```
 
-2. **Android Agent**
-   - Open `android-mdm-agent` in Android Studio
-   - Build and install on target devices
+## Development docs
 
-3. **React Admin Panel**
-   ```bash
-   cd react-admin-panel
-   npm install
-   npm run dev    # Development server
-   npm run build  # Production build
-   ```
-
-## Development
-
-Each component has its own README with detailed setup instructions:
+Each component has its own README:
 - [Android Agent README](./android-mdm-agent/README.md)
-- [React Admin Panel](./react-admin-panel/) - Modern TypeScript + TailwindCSS interface
+- [React Admin Panel](./react-admin-panel/)
 - [Backend Server README](./backend-server/README.md)
 
 ## Security Considerations
@@ -140,35 +172,4 @@ Each component has its own README with detailed setup instructions:
 
 ## License
 
-MIT License - see LICENSE file for details
-
-## Quick Start Commands
-
-```bash
-# Start all services with Docker
-docker-compose up -d
-
-# Or run individually:
-
-# Backend Server
-npm run dev --prefix /Users/phirun/Projects/mdm_project/backend-server
-
-# React Admin Panel (Development)
-cd /Users/phirun/Projects/mdm_project/react-admin-panel && npm run dev
-
-# Access Points:
-# - Admin Panel: http://localhost:8080 (Docker) or http://localhost:5173 (Dev)
-# - Backend API: http://localhost:3000
-# - Database: localhost:5435
-```
-
-# Backend
-cd /Users/phirun/Projects/mdm_project/backend-server
-node src/index.js &
-
-# Flutter Web
-cd /Users/phirun/Projects/mdm_project/flutter-admin-panel  
-flutter run -d web-server --web-port 8080
-
-# Database
-docker start mdm-postgres
+MIT License — see LICENSE for details
