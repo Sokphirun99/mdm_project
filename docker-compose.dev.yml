@@ -4,10 +4,13 @@ services:
   db:
     image: postgres:15-alpine
     container_name: mdm_db_dev
+    command: postgres -c timezone=Asia/Phnom_Penh -c log_timezone=Asia/Phnom_Penh
     environment:
       POSTGRES_DB: mdm_database
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mdm
+      TZ: Asia/Phnom_Penh
+      PGTZ: Asia/Phnom_Penh
     ports:
       - "5435:5432"
     volumes:

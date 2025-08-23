@@ -1,46 +1,30 @@
-import { env } from './config/env';
-import { prisma } from './db/prisma';
 import app from './app';
+import { env } from './config/env';
 
-async function startServer() {
-  try {
-    // Test database connection
-    await prisma.$connect();
-    console.log('✅ Database connected successfully');
+const PORT = env.port || 3000;
 
-    // Start the server
-    const server = app.listen(env.port, () => {
-      console.log(`🚀 MDM Backend Server running on port ${env.port}`);
-      console.log(`📱 Environment: ${env.nodeEnv}`);
-      console.log(`🔗 Health check: ${env.serverUrl}/api/health`);
-      console.log(`📚 API docs: ${env.serverUrl}/api-docs`);
-    });
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📖 API Documentation: http://localhost:${PORT}/api-docs`);
+  console.log(`🔒 Environment: ${env.nodeEnv}`);
+  console.log(`⚡ Ready to handle requests!`);
+});
 
-    // Graceful shutdown
-    const gracefulShutdown = async (signal: string) => {
-      console.log(`\n${signal} received. Starting graceful shutdown...`);
-      
-      server.close(async () => {
-        console.log('HTTP server closed.');
-        
-        try {
-          await prisma.$disconnect();
-          console.log('Database connection closed.');
-          process.exit(0);
-        } catch (error) {
-          console.error('Error during shutdown:', error);
-          process.exit(1);
-        }
-      });
-    };
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    console.log('👋 Server closed successfully');
+    process.exit(0);
+  });
+});
 
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGINT', () => {
+  console.log('🛑 SIGINT received, shutting down gracefully...');
+  server.close(() => {
+    console.log('👋 Server closed successfully');
+    process.exit(0);
+  });
+});
 
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-}
-
-startServer();
+export default server;

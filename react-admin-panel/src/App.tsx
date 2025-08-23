@@ -5,6 +5,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
 import { LoginForm } from './features/auth/LoginForm';
 import { Dashboard } from './features/dashboard/Dashboard';
+import { DevicesPage } from './features/devices/DevicesPage';
+import { PoliciesPage } from './features/policies/PoliciesPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -17,28 +19,6 @@ const queryClient = new QueryClient({
 });
 
 // Placeholder components for other routes
-function DevicesPage() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Devices</h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-gray-600">Devices page - Coming soon...</p>
-      </div>
-    </div>
-  );
-}
-
-function PoliciesPage() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Policies</h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-gray-600">Policies page - Coming soon...</p>
-      </div>
-    </div>
-  );
-}
-
 function AppsPage() {
   return (
     <div className="p-6">

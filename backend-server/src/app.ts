@@ -67,15 +67,36 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging
+// Logging with timestamps
 if (env.nodeEnv === 'development') {
-  app.use(morgan('dev'));
+  // Custom format with timestamp for development
+  app.use(morgan(':date[iso] :method :url :status :res[content-length] - :response-time ms'));
 } else {
   app.use(morgan('combined'));
 }
 
 // API documentation
 setupSwagger(app);
+
+// Root route: redirect to API docs (or show a simple welcome message)
+app.get('/', (req, res) => {
+  // Redirect to Swagger UI for convenience
+  res.redirect('/api-docs');
+  // Alternatively, return JSON:
+  // res.json({ message: 'MDM API is running', docs: '/api-docs', health: '/api/health' });
+});
+
+// API index route: quick metadata and helpful links
+app.get('/api', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'MDM Backend API',
+    version: '2.0.0',
+    docs: '/api-docs',
+    health: '/api/health',
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // API routes
 app.use('/api', router);
