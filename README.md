@@ -506,22 +506,3 @@ cd mdm_project
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **React Team** - For the amazing React framework
-- **Node.js Community** - For the robust runtime environment
-- **PostgreSQL Team** - For the reliable database system
-- **Android Team** - For Android Enterprise APIs
-- **Firebase Team** - For Cloud Messaging services
-- **Open Source Community** - For all the amazing libraries and tools
-
----
-
-<div align="center">
-
-### 🌟 Star this project if you find it useful!
-
-**Built with ❤️ for enterprise mobile device management**
-
-</div>
