@@ -1,6 +1,5 @@
 # 📱 Android MDM (Mobile Device Management) System
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
@@ -150,32 +149,15 @@ graph TB
 | **Container** | Nginx Alpine | ✅ Lightweight |
 
 **Admin Features:**
-- 📊 **Dashboard**: Real-time device statistics and health monitoring
-- 📱 **Device Management**: View, filter, and manage enrolled devices
-- 🛡️ **Policy Management**: Create and assign security policies
-- 📦 **App Management**: Deploy and manage applications
-- ⚡ **Command Center**: Send real-time commands to devices
-- 📈 **Monitoring**: Compliance reporting and analytics
+- 📊 **Dashboard**: Real-time statistics and health (Socket.IO/SSE), org/time filters, mini charts, live events ticker
+- 📱 **Device Management**: Search, filter (status/org), paginate, bulk lock/unlock/wipe with live updates
+- 🛡️ **Policy Management**: Create/update/delete policies with audit (actorId/requestId)
+- �️ **Events & Alerts**: Live feed with filters/pause; dedicated Events page (server-side pagination + CSV export)
+- ⚡ **Command Center**: Queue and track commands; pipeline metrics (queued/in-flight/completed/failed)
+- 📈 **Monitoring**: Compliance breakdowns, last check-in buckets, platform/OS splits, health signals
 - ⚙️ **Settings**: System configuration and user management
 
-**Workflow Diagram:**
-
-flowchart TD
-    A[Android Device Client] -->|1. Periodic Polling<br>GET /api/device/status| B[Go Server<br>main.go]
-
-    subgraph B [Go Server Logic]
-        B1[Receive Request]
-        B1 --> B2{Device ID in<br>deviceConfigs map?}
-        B2 -- Yes --> B3[Fetch Config]
-        B2 -- No --> B4[Return 'not registered' error]
-        B3 --> B5[Return JSON Config]
-    end
-
-    B5 -->|2. JSON Response: config| A
-    B4 -->|2. JSON Response: error| A
-
-    C[Admin/Operator] -->|3. Manually Updates| D[In-Memory Map<br>deviceConfigs]
-    D -->|Read by| B2
+Note: The old Go-based polling diagram has been replaced by a Node/Express + Socket.IO architecture described in the Architecture Overview above.
 
 ### 🔧 Backend Server (`backend-server/`)
 **Robust API server with enterprise features**
@@ -249,6 +231,13 @@ flowchart TD
 | 📊 **Status Reporting** | ✅ **Complete** | Live device status updates |
 | 🔄 **Bidirectional Sync** | ✅ **Complete** | Two-way data synchronization |
 
+#### Realtime & Events
+- Socket rooms: stats scoped by organizationId + time window, events scoped by organizationId
+- SSE fallback: `GET /api/dashboard/stats/stream?organizationId=...&windowMinutes=...&longWindowMinutes=...`
+- Events API:
+    - List: `GET /api/events?page=1&pageSize=25&organizationId=ORG_ID&deviceId=...&type=...&severity=...&from=ISO&to=ISO&search=...`
+    - CSV: `GET /api/events/export?organizationId=...&severity=...&from=...&to=...`
+
 ### Legend
 - ✅ **Complete**: Fully implemented and tested
 - ⚠️ **Partial/Basic**: Basic implementation, can be enhanced
@@ -291,6 +280,8 @@ npm install
 VITE_API_BASE_URL=http://localhost:3000/api npm run dev
 ```
 **Admin panel will be available at**: http://localhost:5173
+
+> Tip: Use Node 20.19+ or 22.12+ to silence Vite’s engine warning during builds.
 
 ### Production Build
 ```bash
@@ -369,7 +360,7 @@ docker exec mdm_backend_dev npm run seed
 ```bash
 # Solution: Rebuild admin container with Tailwind
 docker compose -f docker-compose.dev.yml build admin
-docker compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 #### 🔌 Port Conflicts
@@ -502,7 +493,3 @@ cd mdm_project
 # Make your changes and test
 # Submit a pull request
 ```
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
